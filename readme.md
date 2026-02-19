@@ -1,54 +1,76 @@
-# Шаблон для выполнения тестового задания
+# btlz-wb-test
 
-## Описание
-Шаблон подготовлен для того, чтобы попробовать сократить трудоемкость выполнения тестового задания.
+Сервис для получения тарифов Wildberries и выгрузки их в Google Таблицы.
 
-В шаблоне настоены контейнеры для `postgres` и приложения на `nodejs`.  
-Для взаимодействия с БД используется `knex.js`.  
-В контейнере `app` используется `build` для приложения на `ts`, но можно использовать и `js`.
+## Что делает
 
-Шаблон не является обязательным!\
-Можно использовать как есть или изменять на свой вкус.
+- Каждый час получает тарифы для коробов с WB API
+- Сохраняет данные в PostgreSQL (по одной записи на склад в день, обновляет при повторном запросе)
+- Обновляет данные во всех Google Таблицах из БД (лист `stocks_coefs`), отсортированных по коэффициенту доставки
 
-Все настройки можно найти в файлах:
-- compose.yaml
-- dockerfile
-- package.json
-- tsconfig.json
-- src/config/env/env.ts
-- src/config/knex/knexfile.ts
+## Запуск
 
-## Команды:
+### 1. Клонировать репозиторий
 
-Запуск базы данных:
-```bash
-docker compose up -d --build postgres
+git clone https://github.com/lucard17/btlz-wb-test.git
+
+cd btlz-wb-test
+
+### 2. Заполнить конфигурацию
+
+cp .env.example .env
+
+Открыть `.env` и заполнить все переменные.
+
+### 3. Добавить Google Таблицы
+
+В файле `src/postgres/seeds/spreadsheets.js` заменить `some_spreadsheet` на реальный ID таблицы.
+
+ID таблицы берётся из URL:
+https://docs.google.com/spreadsheets/d/ВОТ_ЭТО_ID/edit
+
+Для каждой таблицы добавить отдельную строку в массив:
+```js
+[
+  { spreadsheet_id: "id_первой_таблицы" },
+  { spreadsheet_id: "id_второй_таблицы" },
+]
 ```
 
-Для выполнения миграций и сидов не из контейнера:
-```bash
-npm run knex:dev migrate latest
-```
+Выдать доступ сервисному аккаунту (`GOOGLE_SERVICE_ACCOUNT_EMAIL`) к каждой таблице с правами редактора.
 
-```bash
-npm run knex:dev seed run
-```
-Также можно использовать и остальные команды (`migrate make <name>`,`migrate up`, `migrate down` и т.д.)
+### 4. Запустить
 
-Для запуска приложения в режиме разработки:
-```bash
-npm run dev
-```
+docker compose up
+
+Приложение само применит миграции, сиды и запустит scheduler.
+
+## Переменные окружения
+
+| Переменная | Описание |
+|---|---|
+| POSTGRES_DB | Название БД |
+| POSTGRES_USER | Пользователь БД |
+| POSTGRES_PASSWORD | Пароль БД |
+| POSTGRES_PORT | Порт БД |
+| POSTGRES_HOST | Хост БД |
+| APP_PORT | Порт приложения |
+| WB_API_TOKEN | Токен WB API |
+| GOOGLE_SERVICE_ACCOUNT_EMAIL | Email сервисного аккаунта Google |
+| GOOGLE_PRIVATE_KEY | Приватный ключ сервисного аккаунта |
+
+## Проверка работы
 
 Запуск проверки самого приложения:
 ```bash
 docker compose up -d --build app
 ```
 
-Для финальной проверки рекомендую:
-```bash
-docker compose down --rmi local --volumes
-docker compose up --build
+В Google Таблице на листе `stocks_coefs` появятся данные отсортированные по коэффициенту доставки.
 ```
 
-PS: С наилучшими пожеланиями!
+---
+
+Не забудь добавить в `.gitignore`:
+.env
+```
