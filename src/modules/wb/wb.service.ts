@@ -5,7 +5,7 @@ const WB_API_URL = "https://common-api.wildberries.ru/api/v1/tariffs/box";
 export async function fetchTariffs(date: string) {
     const response = await fetch(`${WB_API_URL}?date=${date}`, {
         headers: {
-            Authorization: `Bearer ${env.WB_API_TOKEN}`,
+            Authorization: env.WB_API_TOKEN,
         },
     });
 

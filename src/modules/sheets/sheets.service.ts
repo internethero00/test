@@ -35,7 +35,7 @@ export async function updateAllSheets() {
     ];
 
     const rows = tariffs.map((t) => [
-        t.date,
+        t.date instanceof Date ? t.date.toISOString().split("T")[0] : t.date,
         t.warehouse_name,
         t.geo_name,
         t.box_delivery_base,
